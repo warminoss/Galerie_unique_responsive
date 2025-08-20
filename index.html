@@ -141,25 +141,33 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #666;
-            font-size: 1.2rem;
             text-align: center;
             z-index: 100;
+            width: 300px;
         }
 
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #FF6B35;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .loading-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 auto;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00FF7F, #0080FF, #00BFFF, #0080FF, #00FF7F);
+            background-size: 200% 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            animation: loadingGradient 2s linear infinite;
+        }
+
+        @keyframes loadingGradient {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* Thèmes */
@@ -236,8 +244,9 @@
     
     <div class="gallery-container" onclick="nextImage()">
         <div id="loadingMessage" class="loading-message">
-            <div class="loading-spinner"></div>
-            Chargement de la première image...
+            <div class="loading-bar-container">
+                <div class="loading-bar" id="loadingBar"></div>
+            </div>
         </div>
         
         <div id="imageContainer" class="image-container" style="display: none;">
@@ -250,11 +259,11 @@
         let currentIndex = 0;
         let loadedImages = new Set();
         let preloadedImages = {};
-        let currentSize = 0; // 0 = normal, 1 = medium, 2 = small
+        let currentSize = 1; // Commencer par la taille 1 (moyenne) au lieu de 0
 
         const imageSizes = [
-            { padding: '20px', maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100vh - 40px)' }, // Grande
-            { padding: '80px', maxWidth: 'calc(100vw - 160px)', maxHeight: 'calc(100vh - 160px)' }, // Moyenne
+            { padding: '60px', maxWidth: 'calc(100vw - 120px)', maxHeight: 'calc(100vh - 120px)' }, // Grande
+            { padding: '80px', maxWidth: 'calc(100vw - 160px)', maxHeight: 'calc(100vh - 160px)' }, // Moyenne - DÉFAUT
             { padding: '120px', maxWidth: 'calc(100vw - 240px)', maxHeight: 'calc(100vh - 240px)' }, // Petite
             { padding: '160px', maxWidth: 'calc(100vw - 320px)', maxHeight: 'calc(100vh - 320px)' }, // Très petite
             { padding: '200px', maxWidth: 'calc(100vw - 400px)', maxHeight: 'calc(100vh - 400px)' } // Mini
@@ -294,6 +303,9 @@
             const imageFolder = './images/';
             const extensions = ['jpg', 'png', 'jpeg', 'webp', 'gif'];
             
+            // Mettre à jour le loading à 10%
+            updateLoadingProgress(10);
+            
             // Recherche rapide des images disponibles
             for (let i = 1; i <= 100; i++) {
                 let imageFound = false;
@@ -311,66 +323,66 @@
                 if (!imageFound && foundImages.length > 0) {
                     break;
                 }
+                
+                // Mise à jour progressive du loading (10% à 30%)
+                if (i % 5 === 0) {
+                    updateLoadingProgress(Math.min(30, 10 + (i / 100) * 20));
+                }
             }
 
             images = foundImages;
 
             if (images.length === 0) {
-                document.getElementById('loadingMessage').innerHTML = 
-                    '<div>Aucune image trouvée</div><br>' +
-                    'Ajoutez vos images dans le dossier "images/" :<br>' +
-                    'photo1.jpg, photo2.png, photo3.jpg, etc.';
+                document.getElementById('loadingMessage').style.display = 'none';
                 return;
             }
 
-            // Charger la première image immédiatement
-            await loadFirstImage();
-            
-            // Précharger les autres images en arrière-plan
-            preloadOtherImages();
+            // Précharger toutes les images avec progression
+            await preloadAllImages();
         }
 
-        async function loadFirstImage() {
-            if (images.length === 0) return;
-            
-            try {
-                // Charger la première image
-                await preloadImage(images[0]);
-                
-                // Afficher la galerie
-                document.getElementById('loadingMessage').style.display = 'none';
-                document.getElementById('imageContainer').style.display = 'block';
-                
-                // Afficher la première image
-                loadImage(0);
-                
-            } catch (error) {
-                console.error('Erreur lors du chargement de la première image:', error);
+        function updateLoadingProgress(percentage) {
+            const loadingBar = document.getElementById('loadingBar');
+            if (loadingBar) {
+                loadingBar.style.width = percentage + '%';
             }
         }
 
-        async function preloadOtherImages() {
-            // Précharger la deuxième image en priorité
-            if (images.length > 1) {
-                try {
-                    await preloadImage(images[1]);
-                } catch (error) {
-                    console.error('Erreur préchargement image 2:', error);
-                }
-            }
+        async function preloadAllImages() {
+            const totalImages = images.length;
             
-            // Précharger le reste progressivement
-            for (let i = 2; i < images.length; i++) {
+            for (let i = 0; i < totalImages; i++) {
                 try {
                     await preloadImage(images[i]);
-                    // Petite pause pour ne pas surcharger
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // Mise à jour de la progression (30% à 100%)
+                    const progress = 30 + ((i + 1) / totalImages) * 70;
+                    updateLoadingProgress(progress);
+                    
+                    // Petite pause pour voir la progression
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    
                 } catch (error) {
                     console.error(`Erreur préchargement image ${i + 1}:`, error);
                 }
             }
             
-            console.log(`Toutes les ${images.length} images sont préchargées`);
+            // Finaliser à 100%
+            updateLoadingProgress(100);
+            
+            // Attendre un peu puis afficher la galerie
+            setTimeout(() => {
+                // Masquer le loading
+                document.getElementById('loadingMessage').style.display = 'none';
+                
+                // Afficher la galerie
+                document.getElementById('imageContainer').style.display = 'block';
+                
+                // Charger la première image
+                loadImage(0);
+                
+                console.log(`${images.length} images chargées et prêtes !`);
+            }, 500);
         }
 
         function loadImage(index) {
@@ -528,7 +540,13 @@
             forceFullscreen();
             loadImages();
             
-            // Initialiser le centrage parfait pour la première taille
+            // Initialiser avec la taille par défaut (moyenne)
+            const defaultSize = imageSizes[currentSize];
+            document.documentElement.style.setProperty('--image-padding', defaultSize.padding);
+            document.documentElement.style.setProperty('--image-max-width', defaultSize.maxWidth);
+            document.documentElement.style.setProperty('--image-max-height', defaultSize.maxHeight);
+            
+            // Initialiser le centrage parfait pour la taille par défaut
             const imageContainer = document.getElementById('imageContainer');
             if (imageContainer) {
                 imageContainer.style.cssText = `
@@ -538,7 +556,7 @@
                     width: 100vw !important;
                     height: 100vh !important;
                     position: relative !important;
-                    padding: 20px !important;
+                    padding: ${defaultSize.padding} !important;
                 `;
             }
         });
