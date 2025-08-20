@@ -158,16 +158,17 @@
         .loading-bar {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #00FF7F, #0080FF, #00BFFF, #0080FF, #00FF7F);
-            background-size: 200% 100%;
+            background: linear-gradient(90deg, #00FF7F 0%, #0080FF 25%, #00BFFF 50%, #0080FF 75%, #00FF7F 100%);
+            background-size: 400% 100%;
             border-radius: 4px;
             transition: width 0.3s ease;
-            animation: loadingGradient 2s linear infinite;
+            animation: loadingGradient 1.5s linear infinite;
         }
 
         @keyframes loadingGradient {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         /* Thèmes */
@@ -259,7 +260,7 @@
         let currentIndex = 0;
         let loadedImages = new Set();
         let preloadedImages = {};
-        let currentSize = 1; // Commencer par la taille 1 (moyenne) au lieu de 0
+        let currentSize = 0; // Commencer par la taille 0 (plus grande) comme dans la capture
 
         const imageSizes = [
             { padding: '60px', maxWidth: 'calc(100vw - 120px)', maxHeight: 'calc(100vh - 120px)' }, // Grande
@@ -540,7 +541,7 @@
             forceFullscreen();
             loadImages();
             
-            // Initialiser avec la taille par défaut (moyenne)
+            // Initialiser avec la taille par défaut (grande)
             const defaultSize = imageSizes[currentSize];
             document.documentElement.style.setProperty('--image-padding', defaultSize.padding);
             document.documentElement.style.setProperty('--image-max-width', defaultSize.maxWidth);
