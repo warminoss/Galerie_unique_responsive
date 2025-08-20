@@ -331,39 +331,87 @@
             });
         }
 
-        // Fonction pour découvrir et charger les images
-        async function loadImages() {
+        // Fonction pour lire le contenu d'un dossier et récupérer TOUTES les images
+        async function loadAllImagesFromFolder() {
             const foundImages = [];
             const imageFolder = './images/';
-            const extensions = ['jpg', 'png', 'jpeg', 'webp', 'gif'];
+            const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg'];
             
             // Mettre à jour le loading à 10%
             updateLoadingProgress(10);
             
-            // Recherche rapide des images disponibles
+            // Liste de noms de fichiers possibles à tester
+            // On teste une grande variété de noms possibles
+            const possibleNames = [];
+            
+            // Noms numérotés classiques
             for (let i = 1; i <= 100; i++) {
-                let imageFound = false;
-                
-                for (const ext of extensions) {
-                    const imagePath = `${imageFolder}photo${i}.${ext}`;
-                    
-                    if (await imageExists(imagePath)) {
-                        foundImages.push(imagePath);
-                        imageFound = true;
-                        break;
+                possibleNames.push(`photo${i}`, `image${i}`, `img${i}`, `picture${i}`, `pic${i}`);
+                possibleNames.push(`DSC_${String(i).padStart(4, '0')}`, `IMG_${String(i).padStart(4, '0')}`);
+            }
+            
+            // Noms courts
+            possibleNames.push('photo', 'image', 'img', 'picture', 'pic', 'gallery');
+            
+            // Noms de dates possibles (années récentes)
+            for (let year = 2020; year <= 2025; year++) {
+                for (let month = 1; month <= 12; month++) {
+                    for (let day = 1; day <= 31; day++) {
+                        const dateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+                        possibleNames.push(`IMG_${dateStr}`, `DSC_${dateStr}`, `photo_${dateStr}`);
+                        if (possibleNames.length > 5000) break; // Limiter pour éviter trop de requêtes
                     }
+                    if (possibleNames.length > 5000) break;
                 }
-                
-                if (!imageFound && foundImages.length > 0) {
-                    break;
+                if (possibleNames.length > 5000) break;
+            }
+            
+            // Noms communs d'appareils
+            const deviceNames = ['DCIM', 'Camera', 'Photos', 'Galerie', 'vacation', 'vacances', 
+                               'family', 'famille', 'trip', 'voyage', 'wedding', 'mariage',
+                               'birthday', 'anniversaire', 'party', 'fete', 'nature', 'paysage',
+                               'portrait', 'selfie', 'beach', 'plage', 'mountain', 'montagne'];
+            
+            deviceNames.forEach(name => {
+                possibleNames.push(name);
+                for (let i = 1; i <= 20; i++) {
+                    possibleNames.push(`${name}${i}`, `${name}_${i}`);
                 }
-                
-                // Mise à jour progressive du loading (10% à 30%)
-                if (i % 5 === 0) {
-                    updateLoadingProgress(Math.min(30, 10 + (i / 100) * 20));
+            });
+            
+            let tested = 0;
+            const totalToTest = Math.min(possibleNames.length * extensions.length, 10000);
+            
+            // Tester toutes les combinaisons
+            for (const name of possibleNames) {
+                for (const ext of extensions) {
+                    const imagePath = `${imageFolder}${name}.${ext}`;
+                    
+                    if (await imageExists(imagePath) && !foundImages.includes(imagePath)) {
+                        foundImages.push(imagePath);
+                    }
+                    
+                    tested++;
+                    
+                    // Mise à jour progressive du loading (10% à 30%)
+                    if (tested % 100 === 0) {
+                        const progress = 10 + (tested / totalToTest) * 20;
+                        updateLoadingProgress(Math.min(30, progress));
+                    }
+                    
+                    // Limiter le nombre de tests pour éviter les timeouts
+                    if (tested > 10000) break;
                 }
+                if (tested > 10000) break;
             }
 
+            return foundImages;
+        }
+
+        // Fonction pour découvrir et charger les images
+        async function loadImages() {
+            const foundImages = await loadAllImagesFromFolder();
+            
             images = foundImages;
 
             if (images.length === 0) {
@@ -567,6 +615,32 @@
         document.addEventListener('dragstart', function(e) {
             e.preventDefault();
         });
+
+        // Empêcher l'appui long sur iOS pour télécharger l'image
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Empêcher le callout sur iOS
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         // Force le plein écran
         function forceFullscreen() {
