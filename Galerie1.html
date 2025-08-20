@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galerie Photo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+            height: 100vh;
+        }
+
+        .gallery-container {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .image-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .gallery-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            transition: opacity 0.4s ease;
+        }
+
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-button.prev {
+            left: 2rem;
+        }
+
+        .nav-button.next {
+            right: 2rem;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #FF6B35, #FFD700, #FF8C00);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 3px 12px rgba(255, 140, 0, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+            animation: colorShift 3s ease-in-out infinite;
+        }
+
+        @keyframes colorShift {
+            0% { 
+                background: #FF6B35; 
+            }
+            25% { 
+                background: #FFD700; 
+            }
+            50% { 
+                background: #FF8C00; 
+            }
+            75% { 
+                background: #FF69B4; 
+            }
+            100% { 
+                background: #FF6B35; 
+            }
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.15);
+            box-shadow: 0 5px 18px rgba(255, 105, 180, 0.6);
+            animation-duration: 3s;
+        }
+
+        .image-counter {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+
+        .loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        /* Thèmes */
+        body.light-theme {
+            background-color: #ffffff;
+        }
+
+        body.dark-theme {
+            background-color: #000000;
+        }
+
+        body.light-theme .image-counter {
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+        }
+
+        body.light-theme .nav-button {
+            background: rgba(0, 0, 0, 0.1);
+            border-color: rgba(0, 0, 0, 0.3);
+            color: #000;
+        }
+
+        body.light-theme .nav-button:hover {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .gallery-container {
+                padding: 1rem;
+            }
+            
+            .nav-button {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .nav-button.prev {
+                left: 1rem;
+            }
+            
+            .nav-button.next {
+                right: 1rem;
+            }
+            
+            .theme-toggle {
+                top: 1rem;
+                right: 1rem;
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <button class="theme-toggle" onclick="toggleTheme()" title="Changer le thème">●</button>
+    
+    <div class="gallery-container">
+        <div id="loadingMessage" class="loading-message">
+            Chargement des images...
+        </div>
+        
+        <div id="imageContainer" class="image-container" style="display: none;">
+            <button class="nav-button prev" onclick="previousImage()" title="Image précédente">‹</button>
+            <img id="galleryImage" class="gallery-image" alt="Photo de galerie">
+            <button class="nav-button next" onclick="nextImage()" title="Image suivante">›</button>
+        </div>
+    </div>
+    
+    <div id="imageCounter" class="image-counter" style="display: none;">
+        <span id="currentIndex">1</span> / <span id="totalImages">0</span>
+    </div>
+
+    <script>
+        let images = [];
+        let currentIndex = 0;
+
+        // Liste des extensions d'images supportées
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+
+        // Fonction pour charger les images depuis un dossier
+        async function loadImages() {
+            // Pour une utilisation réelle, vous devrez remplacer cette section
+            // par du code qui lit votre dossier d'images local
+            
+            // Exemple d'images de démonstration (remplacez par vos propres images)
+            const demoImages = [
+                'https://picsum.photos/1920/1080?random=1',
+                'https://picsum.photos/1600/900?random=2',
+                'https://picsum.photos/2560/1080?random=3',
+                'https://picsum.photos/1920/1200?random=4',
+                'https://picsum.photos/1800/800?random=5'
+            ];
+
+            images = demoImages;
+
+            if (images.length === 0) {
+                document.getElementById('loadingMessage').textContent = 
+                    'Aucune image trouvée. Ajoutez des images dans votre dossier.';
+                return;
+            }
+
+            // Masquer le message de chargement
+            document.getElementById('loadingMessage').style.display = 'none';
+            
+            // Afficher la galerie
+            document.getElementById('imageContainer').style.display = 'block';
+            document.getElementById('imageCounter').style.display = 'block';
+            
+            // Mettre à jour le compteur
+            document.getElementById('totalImages').textContent = images.length;
+            
+            // Charger la première image
+            loadImage(0);
+        }
+
+        function loadImage(index) {
+            if (index < 0 || index >= images.length) return;
+            
+            currentIndex = index;
+            const img = document.getElementById('galleryImage');
+            
+            // Effet de fondu
+            img.style.opacity = '0';
+            
+            setTimeout(() => {
+                img.src = images[index];
+                img.style.opacity = '1';
+                
+                // Mettre à jour le compteur
+                document.getElementById('currentIndex').textContent = index + 1;
+            }, 200);
+        }
+
+        function nextImage() {
+            const nextIndex = (currentIndex + 1) % images.length;
+            loadImage(nextIndex);
+        }
+
+        function previousImage() {
+            const prevIndex = (currentIndex - 1 + images.length) % images.length;
+            loadImage(prevIndex);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.classList.contains('dark-theme')) {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+            } else {
+                body.classList.remove('light-theme');
+                body.classList.add('dark-theme');
+            }
+        }
+
+        // Navigation au clavier
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowLeft':
+                    previousImage();
+                    break;
+                case 'ArrowRight':
+                    nextImage();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    nextImage();
+                    break;
+                case 't':
+                case 'T':
+                    toggleTheme();
+                    break;
+            }
+        });
+
+        // Support tactile pour mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextImage();
+                } else {
+                    previousImage();
+                }
+            }
+        }
+
+        // Charger les images au démarrage
+        window.addEventListener('load', loadImages);
+
+        // Instructions pour l'utilisation locale
+        console.log(`
+        INSTRUCTIONS POUR UTILISATION LOCALE:
+        
+        1. Créez un dossier 'images' dans le même répertoire que ce fichier HTML
+        
+        2. Ajoutez vos photos dans ce dossier (formats supportés: ${imageExtensions.join(', ')})
+        
+        3. Remplacez la fonction loadImages() par ce code:
+        
+        async function loadImages() {
+            // Utilisez un serveur local ou adaptez selon votre configuration
+            const imageFolder = './images/';
+            
+            // Liste manuelle de vos images (exemple):
+            const imageFiles = [
+                'photo1.jpg',
+                'photo2.png', 
+                'photo3.jpeg'
+                // Ajoutez toutes vos images ici
+            ];
+            
+            images = imageFiles.map(file => imageFolder + file);
+            
+            // ... reste du code identique
+        }
+        
+        CONTRÔLES:
+        - Flèches gauche/droite: Navigation
+        - Espace: Image suivante  
+        - T: Basculer thème
+        - Glissement tactile sur mobile
+        `);
+    </script>
+</body>
+</html>
