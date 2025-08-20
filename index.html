@@ -38,17 +38,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: var(--image-padding, 20px);
         }
 
         .gallery-image {
-            max-width: calc(100vw - 40px);
-            max-height: calc(100vh - 40px);
+            max-width: var(--image-max-width, calc(100vw - 40px));
+            max-height: var(--image-max-height, calc(100vh - 40px));
             width: auto;
             height: auto;
             object-fit: contain;
             display: block;
-            transition: opacity 0.3s ease;
+            transition: all 0.4s ease;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
@@ -66,10 +66,33 @@
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
+            color: #0066FF;
             box-shadow: 0 3px 12px rgba(255, 107, 53, 0.4);
             transition: all 0.3s ease;
             z-index: 1000;
             animation: colorShift 8s ease-in-out infinite;
+        }
+
+        .size-toggle {
+            position: fixed;
+            top: 70px;
+            right: 23.5px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #FF6B35;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #FF8C00;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            animation: colorShift 8s ease-in-out infinite;
+            animation-delay: 1s;
         }
 
         @keyframes colorShift {
@@ -96,6 +119,12 @@
         .theme-toggle:hover {
             transform: scale(1.15);
             box-shadow: 0 5px 18px rgba(255, 105, 180, 0.6);
+            animation-duration: 3s;
+        }
+
+        .size-toggle:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.5);
             animation-duration: 3s;
         }
 
@@ -162,11 +191,20 @@
                 height: 30px;
                 font-size: 1rem;
             }
+            
+            .size-toggle {
+                top: 55px;
+                right: 18px;
+                width: 24px;
+                height: 24px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body class="dark-theme">
     <button class="theme-toggle" onclick="toggleTheme(event)" title="Changer le thème">●</button>
+    <button class="size-toggle" onclick="toggleSize(event)" title="Changer la taille">●</button>
     
     <div class="gallery-container" onclick="nextImage()">
         <div id="loadingMessage" class="loading-message">
@@ -184,6 +222,13 @@
         let currentIndex = 0;
         let loadedImages = new Set();
         let preloadedImages = {};
+        let currentSize = 0; // 0 = normal, 1 = medium, 2 = small
+
+        const imageSizes = [
+            { padding: '20px', maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100vh - 40px)' }, // Normal
+            { padding: '80px', maxWidth: 'calc(100vw - 160px)', maxHeight: 'calc(100vh - 160px)' }, // Medium
+            { padding: '120px', maxWidth: 'calc(100vw - 240px)', maxHeight: 'calc(100vh - 240px)' } // Small
+        ];
 
         // Fonction pour tester si une image existe
         function imageExists(url) {
@@ -323,6 +368,18 @@
             loadImage(nextIndex);
         }
 
+        function toggleSize(event) {
+            event.stopPropagation();
+            
+            currentSize = (currentSize + 1) % imageSizes.length;
+            const size = imageSizes[currentSize];
+            
+            // Appliquer les nouvelles tailles via CSS variables
+            document.documentElement.style.setProperty('--image-padding', size.padding);
+            document.documentElement.style.setProperty('--image-max-width', size.maxWidth);
+            document.documentElement.style.setProperty('--image-max-height', size.maxHeight);
+        }
+
         function toggleTheme(event) {
             event.stopPropagation(); // Empêcher le clic de passer à l'image suivante
             
@@ -390,8 +447,18 @@
             }
         }
 
-        // Empêcher le zoom sur mobile
-        document.addEventListener('gesturestart', function (e) {
+        // Empêcher le menu contextuel (clic droit)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Empêcher la sélection de texte
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+        });
+
+        // Empêcher le drag and drop des images
+        document.addEventListener('dragstart', function(e) {
             e.preventDefault();
         });
 
