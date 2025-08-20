@@ -67,7 +67,6 @@
             justify-content: center;
             font-size: 1.1rem;
             color: #0066FF;
-            box-shadow: 0 3px 12px rgba(255, 107, 53, 0.4);
             transition: all 0.3s ease;
             z-index: 1000;
             animation: colorShift 8s ease-in-out infinite;
@@ -88,7 +87,6 @@
             justify-content: center;
             font-size: 0.9rem;
             color: #FF8C00;
-            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
             transition: all 0.3s ease;
             z-index: 1000;
             animation: colorShift 8s ease-in-out infinite;
@@ -118,13 +116,11 @@
 
         .theme-toggle:hover {
             transform: scale(1.15);
-            box-shadow: 0 5px 18px rgba(255, 105, 180, 0.6);
             animation-duration: 3s;
         }
 
         .size-toggle:hover {
             transform: scale(1.2);
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.5);
             animation-duration: 3s;
         }
 
@@ -202,7 +198,7 @@
         }
     </style>
 </head>
-<body class="dark-theme">
+<body class="light-theme">
     <button class="theme-toggle" onclick="toggleTheme(event)" title="Changer le thème">●</button>
     <button class="size-toggle" onclick="toggleSize(event)" title="Changer la taille">●</button>
     
@@ -225,9 +221,11 @@
         let currentSize = 0; // 0 = normal, 1 = medium, 2 = small
 
         const imageSizes = [
-            { padding: '20px', maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100vh - 40px)' }, // Normal
-            { padding: '80px', maxWidth: 'calc(100vw - 160px)', maxHeight: 'calc(100vh - 160px)' }, // Medium
-            { padding: '120px', maxWidth: 'calc(100vw - 240px)', maxHeight: 'calc(100vh - 240px)' } // Small
+            { padding: '20px', maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100vh - 40px)' }, // Grande
+            { padding: '80px', maxWidth: 'calc(100vw - 160px)', maxHeight: 'calc(100vh - 160px)' }, // Moyenne
+            { padding: '120px', maxWidth: 'calc(100vw - 240px)', maxHeight: 'calc(100vh - 240px)' }, // Petite
+            { padding: '160px', maxWidth: 'calc(100vw - 320px)', maxHeight: 'calc(100vh - 320px)' }, // Très petite
+            { padding: '200px', maxWidth: 'calc(100vw - 400px)', maxHeight: 'calc(100vh - 400px)' } // Mini
         ];
 
         // Fonction pour tester si une image existe
@@ -384,15 +382,15 @@
             event.stopPropagation(); // Empêcher le clic de passer à l'image suivante
             
             const body = document.body;
-            if (body.classList.contains('dark-theme')) {
-                body.classList.remove('dark-theme');
-                body.classList.add('light-theme');
-            } else if (body.classList.contains('light-theme')) {
+            if (body.classList.contains('light-theme')) {
                 body.classList.remove('light-theme');
                 body.classList.add('neutral-theme');
-            } else {
+            } else if (body.classList.contains('neutral-theme')) {
                 body.classList.remove('neutral-theme');
                 body.classList.add('dark-theme');
+            } else {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
             }
         }
 
