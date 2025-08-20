@@ -9,6 +9,12 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
+            background-image: none !important;
+            filter: none !important;
+            backdrop-filter: none !important;
         }
 
         html, body {
@@ -17,6 +23,12 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             transition: background-color 0.3s ease;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
+            background-image: none !important;
         }
 
         .gallery-container {
@@ -515,6 +527,20 @@
         window.addEventListener('load', () => {
             forceFullscreen();
             loadImages();
+            
+            // Initialiser le centrage parfait pour la première taille
+            const imageContainer = document.getElementById('imageContainer');
+            if (imageContainer) {
+                imageContainer.style.cssText = `
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    position: relative !important;
+                    padding: 20px !important;
+                `;
+            }
         });
 
         // Forcer le plein écran même si la page est redimensionnée
