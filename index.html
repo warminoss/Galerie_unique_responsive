@@ -331,7 +331,7 @@
             });
         }
 
-        // Fonction pour lire le contenu d'un dossier et récupérer TOUTES les images
+        // Fonction pour lire le contenu d'un dossier (simulation - à adapter selon votre environnement)
         async function loadAllImagesFromFolder() {
             const foundImages = [];
             const imageFolder = './images/';
@@ -340,69 +340,49 @@
             // Mettre à jour le loading à 10%
             updateLoadingProgress(10);
             
-            // Liste de noms de fichiers possibles à tester
-            // On teste une grande variété de noms possibles
-            const possibleNames = [];
-            
-            // Noms numérotés classiques
+            // D'abord, essayer le système de numérotation photo1, photo2, etc.
             for (let i = 1; i <= 100; i++) {
-                possibleNames.push(`photo${i}`, `image${i}`, `img${i}`, `picture${i}`, `pic${i}`);
-                possibleNames.push(`DSC_${String(i).padStart(4, '0')}`, `IMG_${String(i).padStart(4, '0')}`);
-            }
-            
-            // Noms courts
-            possibleNames.push('photo', 'image', 'img', 'picture', 'pic', 'gallery');
-            
-            // Noms de dates possibles (années récentes)
-            for (let year = 2020; year <= 2025; year++) {
-                for (let month = 1; month <= 12; month++) {
-                    for (let day = 1; day <= 31; day++) {
-                        const dateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
-                        possibleNames.push(`IMG_${dateStr}`, `DSC_${dateStr}`, `photo_${dateStr}`);
-                        if (possibleNames.length > 5000) break; // Limiter pour éviter trop de requêtes
+                let imageFound = false;
+                
+                for (const ext of extensions) {
+                    const imagePath = `${imageFolder}photo${i}.${ext}`;
+                    
+                    if (await imageExists(imagePath)) {
+                        foundImages.push(imagePath);
+                        imageFound = true;
+                        break;
                     }
-                    if (possibleNames.length > 5000) break;
                 }
-                if (possibleNames.length > 5000) break;
+                
+                if (!imageFound && foundImages.length > 0) {
+                    break;
+                }
+                
+                // Mise à jour progressive du loading (10% à 20%)
+                if (i % 10 === 0) {
+                    updateLoadingProgress(Math.min(20, 10 + (i / 100) * 10));
+                }
             }
             
-            // Noms communs d'appareils
-            const deviceNames = ['DCIM', 'Camera', 'Photos', 'Galerie', 'vacation', 'vacances', 
-                               'family', 'famille', 'trip', 'voyage', 'wedding', 'mariage',
-                               'birthday', 'anniversaire', 'party', 'fete', 'nature', 'paysage',
-                               'portrait', 'selfie', 'beach', 'plage', 'mountain', 'montagne'];
+            // Ensuite, essayer des noms communs d'images
+            const commonNames = [
+                'image1', 'image2', 'image3', 'img1', 'img2', 'img3',
+                'picture1', 'picture2', 'picture3', 'pic1', 'pic2', 'pic3',
+                'DSC_0001', 'DSC_0002', 'DSC_0003', 'IMG_0001', 'IMG_0002', 'IMG_0003',
+                'photo', 'image', 'picture', 'gallery1', 'gallery2', 'gallery3'
+            ];
             
-            deviceNames.forEach(name => {
-                possibleNames.push(name);
-                for (let i = 1; i <= 20; i++) {
-                    possibleNames.push(`${name}${i}`, `${name}_${i}`);
-                }
-            });
-            
-            let tested = 0;
-            const totalToTest = Math.min(possibleNames.length * extensions.length, 10000);
-            
-            // Tester toutes les combinaisons
-            for (const name of possibleNames) {
+            for (const name of commonNames) {
                 for (const ext of extensions) {
                     const imagePath = `${imageFolder}${name}.${ext}`;
                     
                     if (await imageExists(imagePath) && !foundImages.includes(imagePath)) {
                         foundImages.push(imagePath);
                     }
-                    
-                    tested++;
-                    
-                    // Mise à jour progressive du loading (10% à 30%)
-                    if (tested % 100 === 0) {
-                        const progress = 10 + (tested / totalToTest) * 20;
-                        updateLoadingProgress(Math.min(30, progress));
-                    }
-                    
-                    // Limiter le nombre de tests pour éviter les timeouts
-                    if (tested > 10000) break;
                 }
-                if (tested > 10000) break;
+                
+                // Mise à jour progressive (20% à 30%)
+                updateLoadingProgress(20 + (commonNames.indexOf(name) / commonNames.length) * 10);
             }
 
             return foundImages;
