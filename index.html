@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galerie Photo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .gallery-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--image-padding, 20px);
+        }
+
+        .gallery-image {
+            max-width: var(--image-max-width, calc(100vw - 40px));
+            max-height: var(--image-max-height, calc(100vh - 40px));
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #FF6B35;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #0066FF;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            animation: colorShift 8s ease-in-out infinite;
+        }
+
+        .size-toggle {
+            position: fixed;
+            top: 70px;
+            right: 23.5px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #FF6B35;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #FF8C00;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            animation: colorShift 8s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+
+        @keyframes colorShift {
+            0% { 
+                background: #FF6B35; 
+            }
+            20% { 
+                background: #FFD700; 
+            }
+            40% { 
+                background: #FF8C00; 
+            }
+            60% { 
+                background: #FF69B4; 
+            }
+            80% { 
+                background: #808080; 
+            }
+            100% { 
+                background: #FF6B35; 
+            }
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.15);
+            animation-duration: 3s;
+        }
+
+        .size-toggle:hover {
+            transform: scale(1.2);
+            animation-duration: 3s;
+        }
+
+        .loading-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 1.2rem;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #FF6B35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Thèmes */
+        body.light-theme {
+            background-color: #ffffff;
+        }
+
+        body.dark-theme {
+            background-color: #000000;
+        }
+
+        body.neutral-theme {
+            background-color: #808080;
+        }
+
+        body.light-theme .loading-message {
+            color: #333;
+        }
+
+        body.dark-theme .loading-message {
+            color: #666;
+        }
+
+        body.neutral-theme .loading-message {
+            color: #333;
+        }
+
+        /* Force le plein écran */
+        .gallery-container {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Mobile optimisations */
+        @media (max-width: 768px) {
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+            }
+            
+            .size-toggle {
+                top: 55px;
+                right: 18px;
+                width: 24px;
+                height: 24px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="light-theme">
+    <button class="theme-toggle" onclick="toggleTheme(event)" title="Changer le thème">●</button>
+    <button class="size-toggle" onclick="toggleSize(event)" title="Changer la taille">●</button>
+    
+    <div class="gallery-container" onclick="nextImage()">
+        <div id="loadingMessage" class="loading-message">
+            <div class="loading-spinner"></div>
+            Chargement de la première image...
+        </div>
+        
+        <div id="imageContainer" class="image-container" style="display: none;">
+            <img id="galleryImage" class="gallery-image" alt="Photo de galerie">
+        </div>
+    </div>
+
+    <script>
+        let images = [];
+        let currentIndex = 0;
+        let loadedImages = new Set();
+        let preloadedImages = {};
+        let currentSize = 0; // 0 = normal, 1 = medium, 2 = small
+
+        const imageSizes = [
+            { padding: '20px', maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100vh - 40px)' }, // Grande
+            { padding: '80px', maxWidth: 'calc(100vw - 160px)', maxHeight: 'calc(100vh - 160px)' }, // Moyenne
+            { padding: '120px', maxWidth: 'calc(100vw - 240px)', maxHeight: 'calc(100vh - 240px)' }, // Petite
+            { padding: '160px', maxWidth: 'calc(100vw - 320px)', maxHeight: 'calc(100vh - 320px)' }, // Très petite
+            { padding: '200px', maxWidth: 'calc(100vw - 400px)', maxHeight: 'calc(100vh - 400px)' } // Mini
+        ];
+
+        // Fonction pour tester si une image existe
+        function imageExists(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+        }
+
+        // Fonction pour précharger une image
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                if (preloadedImages[url]) {
+                    resolve(preloadedImages[url]);
+                    return;
+                }
+                
+                const img = new Image();
+                img.onload = () => {
+                    preloadedImages[url] = img;
+                    resolve(img);
+                };
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        // Fonction pour découvrir et charger les images
+        async function loadImages() {
+            const foundImages = [];
+            const imageFolder = './images/';
+            const extensions = ['jpg', 'png', 'jpeg', 'webp', 'gif'];
+            
+            // Recherche rapide des images disponibles
+            for (let i = 1; i <= 100; i++) {
+                let imageFound = false;
+                
+                for (const ext of extensions) {
+                    const imagePath = `${imageFolder}photo${i}.${ext}`;
+                    
+                    if (await imageExists(imagePath)) {
+                        foundImages.push(imagePath);
+                        imageFound = true;
+                        break;
+                    }
+                }
+                
+                if (!imageFound && foundImages.length > 0) {
+                    break;
+                }
+            }
+
+            images = foundImages;
+
+            if (images.length === 0) {
+                document.getElementById('loadingMessage').innerHTML = 
+                    '<div>Aucune image trouvée</div><br>' +
+                    'Ajoutez vos images dans le dossier "images/" :<br>' +
+                    'photo1.jpg, photo2.png, photo3.jpg, etc.';
+                return;
+            }
+
+            // Charger la première image immédiatement
+            await loadFirstImage();
+            
+            // Précharger les autres images en arrière-plan
+            preloadOtherImages();
+        }
+
+        async function loadFirstImage() {
+            if (images.length === 0) return;
+            
+            try {
+                // Charger la première image
+                await preloadImage(images[0]);
+                
+                // Afficher la galerie
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('imageContainer').style.display = 'block';
+                
+                // Afficher la première image
+                loadImage(0);
+                
+            } catch (error) {
+                console.error('Erreur lors du chargement de la première image:', error);
+            }
+        }
+
+        async function preloadOtherImages() {
+            // Précharger la deuxième image en priorité
+            if (images.length > 1) {
+                try {
+                    await preloadImage(images[1]);
+                } catch (error) {
+                    console.error('Erreur préchargement image 2:', error);
+                }
+            }
+            
+            // Précharger le reste progressivement
+            for (let i = 2; i < images.length; i++) {
+                try {
+                    await preloadImage(images[i]);
+                    // Petite pause pour ne pas surcharger
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                } catch (error) {
+                    console.error(`Erreur préchargement image ${i + 1}:`, error);
+                }
+            }
+            
+            console.log(`Toutes les ${images.length} images sont préchargées`);
+        }
+
+        function loadImage(index) {
+            if (index < 0 || index >= images.length) return;
+            
+            currentIndex = index;
+            const img = document.getElementById('galleryImage');
+            
+            // Transition rapide
+            img.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (preloadedImages[images[index]]) {
+                    img.src = images[index];
+                } else {
+                    img.src = images[index];
+                }
+                img.style.opacity = '1';
+            }, 100);
+        }
+
+        function nextImage() {
+            if (images.length === 0) return;
+            const nextIndex = (currentIndex + 1) % images.length;
+            loadImage(nextIndex);
+        }
+
+        function toggleSize(event) {
+            event.stopPropagation();
+            
+            currentSize = (currentSize + 1) % imageSizes.length;
+            const size = imageSizes[currentSize];
+            
+            // Appliquer les nouvelles tailles via CSS variables
+            document.documentElement.style.setProperty('--image-padding', size.padding);
+            document.documentElement.style.setProperty('--image-max-width', size.maxWidth);
+            document.documentElement.style.setProperty('--image-max-height', size.maxHeight);
+        }
+
+        function toggleTheme(event) {
+            event.stopPropagation(); // Empêcher le clic de passer à l'image suivante
+            
+            const body = document.body;
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                body.classList.add('neutral-theme');
+            } else if (body.classList.contains('neutral-theme')) {
+                body.classList.remove('neutral-theme');
+                body.classList.add('dark-theme');
+            } else {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+            }
+        }
+
+        // Navigation au clavier
+        document.addEventListener('keydown', (e) => {
+            if (images.length === 0) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    const prevIndex = (currentIndex - 1 + images.length) % images.length;
+                    loadImage(prevIndex);
+                    break;
+                case 'ArrowRight':
+                case ' ':
+                    e.preventDefault();
+                    nextImage();
+                    break;
+                case 't':
+                case 'T':
+                    toggleTheme(e);
+                    break;
+            }
+        });
+
+        // Support tactile pour mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (images.length === 0) return;
+            
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextImage();
+                } else {
+                    const prevIndex = (currentIndex - 1 + images.length) % images.length;
+                    loadImage(prevIndex);
+                }
+            }
+        }
+
+        // Empêcher le menu contextuel (clic droit)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Empêcher la sélection de texte
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+        });
+
+        // Empêcher le drag and drop des images
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+
+        // Force le plein écran
+        function forceFullscreen() {
+            const container = document.querySelector('.gallery-container');
+            if (container) {
+                container.style.cssText = `
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    z-index: 1 !important;
+                `;
+            }
+        }
+
+        // Charger les images au démarrage
+        window.addEventListener('load', () => {
+            forceFullscreen();
+            loadImages();
+        });
+
+        // Forcer le plein écran même si la page est redimensionnée
+        window.addEventListener('resize', forceFullscreen);
+    </script>
+</body>
+</html>
