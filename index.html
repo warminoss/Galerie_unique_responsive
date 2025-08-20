@@ -213,21 +213,26 @@
         }
 
         /* Supprimer tous les cadres et bordures parasites */
-        * {
+        *:not(.theme-toggle):not(.size-toggle) {
             border: none !important;
             outline: none !important;
             box-shadow: none !important;
         }
 
-        /* Forcer la suppression de tout élément texte indésirable SAUF les puces */
-        *:not(.loading-dot):not(.theme-toggle):not(.size-toggle):not(.gallery-image):not(button) {
+        /* Masquer seulement les textes parasites, pas les boutons */
+        div:not(.loading-dot):not(.image-container):not(.gallery-container):not(.loading-message) {
             color: transparent !important;
-            background: transparent !important;
         }
         
+        /* Garder les puces fonctionnelles */
         .theme-toggle, .size-toggle {
             border: none !important;
             outline: none !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+        
+        .theme-toggle {
             color: #0066FF !important;
         }
         
