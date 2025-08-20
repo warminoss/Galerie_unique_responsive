@@ -219,8 +219,8 @@
             box-shadow: none !important;
         }
 
-        /* Forcer la suppression de tout élément texte indésirable */
-        *:not(.loading-dot):not(.theme-toggle):not(.size-toggle):not(.gallery-image) {
+        /* Forcer la suppression de tout élément texte indésirable SAUF les puces */
+        *:not(.loading-dot):not(.theme-toggle):not(.size-toggle):not(.gallery-image):not(button) {
             color: transparent !important;
             background: transparent !important;
         }
@@ -228,6 +228,11 @@
         .theme-toggle, .size-toggle {
             border: none !important;
             outline: none !important;
+            color: #0066FF !important;
+        }
+        
+        .size-toggle {
+            color: #FF8C00 !important;
         }
 
         /* Force le plein écran */
@@ -422,7 +427,26 @@
                     img.src = images[index];
                 }
                 img.style.opacity = '1';
+                
+                // Forcer le recentrage à chaque nouvelle image
+                const imageContainer = document.getElementById('imageContainer');
+                if (imageContainer) {
+                    const currentSize = imageSizes[getCurrentSizeIndex()];
+                    imageContainer.style.cssText = `
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        position: relative !important;
+                        padding: ${currentSize.padding} !important;
+                    `;
+                }
             }, 100);
+        }
+
+        function getCurrentSizeIndex() {
+            return currentSize;
         }
 
         function nextImage() {
