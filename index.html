@@ -152,15 +152,24 @@
 
         /* Thèmes */
         body.light-theme {
-            background-color: #ffffff;
+            background-color: #ffffff !important;
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
         }
 
         body.dark-theme {
-            background-color: #000000;
+            background-color: #000000 !important;
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
         }
 
         body.neutral-theme {
-            background-color: #808080;
+            background-color: #808080 !important;
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
         }
 
         body.light-theme .loading-message {
@@ -184,6 +193,9 @@
             height: 100vh !important;
             margin: 0 !important;
             padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            outline: none !important;
         }
 
         /* Mobile optimisations */
@@ -384,6 +396,20 @@
             document.documentElement.style.setProperty('--image-padding', size.padding);
             document.documentElement.style.setProperty('--image-max-width', size.maxWidth);
             document.documentElement.style.setProperty('--image-max-height', size.maxHeight);
+            
+            // Forcer le recentrage avec !important
+            const imageContainer = document.getElementById('imageContainer');
+            if (imageContainer) {
+                imageContainer.style.cssText = `
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    position: relative !important;
+                    padding: ${size.padding} !important;
+                `;
+            }
         }
 
         function toggleTheme(event) {
