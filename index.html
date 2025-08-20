@@ -143,32 +143,30 @@
             transform: translate(-50%, -50%);
             text-align: center;
             z-index: 100;
-            width: 300px;
         }
 
-        .loading-bar-container {
-            width: 100%;
-            height: 8px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            overflow: hidden;
+        .loading-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #FF69B4;
             margin: 0 auto;
+            animation: loadingBlink 1.5s ease-in-out infinite;
         }
 
-        .loading-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #00FF7F 0%, #0080FF 25%, #00BFFF 50%, #0080FF 75%, #00FF7F 100%);
-            background-size: 400% 100%;
-            border-radius: 4px;
-            transition: width 0.3s ease;
-            animation: loadingGradient 1.5s linear infinite;
-        }
-
-        @keyframes loadingGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        @keyframes loadingBlink {
+            0%, 100% { 
+                background-color: #FF69B4;
+                opacity: 1;
+            }
+            33% { 
+                background-color: #FF8C00;
+                opacity: 0.7;
+            }
+            66% { 
+                background-color: #FFD700;
+                opacity: 0.4;
+            }
         }
 
         /* Thèmes */
@@ -203,6 +201,33 @@
 
         body.neutral-theme .loading-message {
             color: #333;
+        }
+
+        /* Masquer complètement tout texte parasite */
+        .loading-message * {
+            display: none !important;
+        }
+        
+        .loading-message .loading-dot {
+            display: block !important;
+        }
+
+        /* Supprimer tous les cadres et bordures parasites */
+        * {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Forcer la suppression de tout élément texte indésirable */
+        *:not(.loading-dot):not(.theme-toggle):not(.size-toggle):not(.gallery-image) {
+            color: transparent !important;
+            background: transparent !important;
+        }
+        
+        .theme-toggle, .size-toggle {
+            border: none !important;
+            outline: none !important;
         }
 
         /* Force le plein écran */
@@ -245,9 +270,7 @@
     
     <div class="gallery-container" onclick="nextImage()">
         <div id="loadingMessage" class="loading-message">
-            <div class="loading-bar-container">
-                <div class="loading-bar" id="loadingBar"></div>
-            </div>
+            <div class="loading-dot"></div>
         </div>
         
         <div id="imageContainer" class="image-container" style="display: none;">
@@ -343,10 +366,7 @@
         }
 
         function updateLoadingProgress(percentage) {
-            const loadingBar = document.getElementById('loadingBar');
-            if (loadingBar) {
-                loadingBar.style.width = percentage + '%';
-            }
+            // Plus besoin de mettre à jour une barre, juste laisser le point clignoter
         }
 
         async function preloadAllImages() {
