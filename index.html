@@ -88,17 +88,17 @@
             width: 35px;
             height: 35px;
             border-radius: 50%;
-            background: linear-gradient(45deg, #FF6B35, #FFD700, #FF8C00);
+            background: #FF6B35;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
-            box-shadow: 0 3px 12px rgba(255, 140, 0, 0.4);
+            box-shadow: 0 3px 12px rgba(255, 107, 53, 0.4);
             transition: all 0.3s ease;
             z-index: 100;
-            animation: colorShift 3s ease-in-out infinite;
+            animation: colorShift 8s ease-in-out infinite;
         }
 
         @keyframes colorShift {
@@ -209,7 +209,7 @@
     
     <div class="gallery-container">
         <div id="loadingMessage" class="loading-message">
-            Chargement des images...
+            Recherche des images...
         </div>
         
         <div id="imageContainer" class="image-container" style="display: none;">
@@ -227,28 +227,53 @@
         let images = [];
         let currentIndex = 0;
 
-        // Liste des extensions d'images supportées
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+        // Fonction pour tester si une image existe
+        function imageExists(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                img.src = url;
+            });
+        }
 
-        // Fonction pour charger les images depuis un dossier
+        // Fonction pour charger automatiquement les images
         async function loadImages() {
-            // Pour une utilisation réelle, vous devrez remplacer cette section
-            // par du code qui lit votre dossier d'images local
+            const foundImages = [];
+            const imageFolder = './images/';
             
-            // Exemple d'images de démonstration (remplacez par vos propres images)
-            const demoImages = [
-                'https://picsum.photos/1920/1080?random=1',
-                'https://picsum.photos/1600/900?random=2',
-                'https://picsum.photos/2560/1080?random=3',
-                'https://picsum.photos/1920/1200?random=4',
-                'https://picsum.photos/1800/800?random=5'
-            ];
+            // Test des extensions possibles
+            const extensions = ['jpg', 'png', 'jpeg', 'webp', 'gif'];
+            
+            // Rechercher photo1.jpg jusqu'à photo100.jpg/png
+            for (let i = 1; i <= 100; i++) {
+                let imageFound = false;
+                
+                for (const ext of extensions) {
+                    const imagePath = `${imageFolder}photo${i}.${ext}`;
+                    
+                    if (await imageExists(imagePath)) {
+                        foundImages.push(imagePath);
+                        imageFound = true;
+                        break; // Passer au numéro suivant si une image est trouvée
+                    }
+                }
+                
+                // Si aucune image n'est trouvée pour ce numéro, on s'arrête
+                // (pour éviter les trous dans la numérotation)
+                if (!imageFound && foundImages.length > 0) {
+                    break;
+                }
+            }
 
-            images = demoImages;
+            images = foundImages;
 
             if (images.length === 0) {
-                document.getElementById('loadingMessage').textContent = 
-                    'Aucune image trouvée. Ajoutez des images dans votre dossier.';
+                document.getElementById('loadingMessage').innerHTML = 
+                    'Aucune image trouvée.<br><br>' +
+                    'Ajoutez vos images dans le dossier "images/" avec les noms:<br>' +
+                    'photo1.jpg, photo2.png, photo3.jpg, etc.<br><br>' +
+                    'Extensions supportées: jpg, png, jpeg, webp, gif';
                 return;
             }
 
@@ -264,6 +289,8 @@
             
             // Charger la première image
             loadImage(0);
+
+            console.log(`${images.length} images trouvées:`, images);
         }
 
         function loadImage(index) {
@@ -285,11 +312,13 @@
         }
 
         function nextImage() {
+            if (images.length === 0) return;
             const nextIndex = (currentIndex + 1) % images.length;
             loadImage(nextIndex);
         }
 
         function previousImage() {
+            if (images.length === 0) return;
             const prevIndex = (currentIndex - 1 + images.length) % images.length;
             loadImage(prevIndex);
         }
@@ -307,6 +336,8 @@
 
         // Navigation au clavier
         document.addEventListener('keydown', (e) => {
+            if (images.length === 0) return;
+            
             switch(e.key) {
                 case 'ArrowLeft':
                     previousImage();
@@ -339,6 +370,8 @@
         });
 
         function handleSwipe() {
+            if (images.length === 0) return;
+            
             const swipeThreshold = 50;
             const diff = touchStartX - touchEndX;
             
@@ -353,40 +386,6 @@
 
         // Charger les images au démarrage
         window.addEventListener('load', loadImages);
-
-        // Instructions pour l'utilisation locale
-        console.log(`
-        INSTRUCTIONS POUR UTILISATION LOCALE:
-        
-        1. Créez un dossier 'images' dans le même répertoire que ce fichier HTML
-        
-        2. Ajoutez vos photos dans ce dossier (formats supportés: ${imageExtensions.join(', ')})
-        
-        3. Remplacez la fonction loadImages() par ce code:
-        
-        async function loadImages() {
-            // Utilisez un serveur local ou adaptez selon votre configuration
-            const imageFolder = './images/';
-            
-            // Liste manuelle de vos images (exemple):
-            const imageFiles = [
-                'photo1.jpg',
-                'photo2.png', 
-                'photo3.jpeg'
-                // Ajoutez toutes vos images ici
-            ];
-            
-            images = imageFiles.map(file => imageFolder + file);
-            
-            // ... reste du code identique
-        }
-        
-        CONTRÔLES:
-        - Flèches gauche/droite: Navigation
-        - Espace: Image suivante  
-        - T: Basculer thème
-        - Glissement tactile sur mobile
-        `);
     </script>
 </body>
 </html>
