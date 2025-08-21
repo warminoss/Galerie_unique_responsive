@@ -119,7 +119,7 @@
                 background: #FF69B4; 
             }
             80% { 
-                background: #808080; 
+                background: #777777; 
             }
             100% { 
                 background: #FF6B35; 
@@ -185,7 +185,7 @@
         }
 
         body.neutral-theme {
-            background-color: #808080 !important;
+            background-color: #777777 !important;
             box-shadow: none !important;
             border: none !important;
             outline: none !important;
@@ -274,7 +274,7 @@
         }
     </style>
 </head>
-<body class="light-theme">
+<body class="neutral-theme">
     <button class="theme-toggle" onclick="toggleTheme(event)" title="Changer le thème">●</button>
     <button class="size-toggle" onclick="toggleSize(event)" title="Changer la taille">●</button>
     
@@ -541,15 +541,15 @@
             event.stopPropagation(); // Empêcher le clic de passer à l'image suivante
             
             const body = document.body;
-            if (body.classList.contains('light-theme')) {
-                body.classList.remove('light-theme');
-                body.classList.add('neutral-theme');
-            } else if (body.classList.contains('neutral-theme')) {
+            if (body.classList.contains('neutral-theme')) {
                 body.classList.remove('neutral-theme');
+                body.classList.add('light-theme');
+            } else if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
                 body.classList.add('dark-theme');
             } else {
                 body.classList.remove('dark-theme');
-                body.classList.add('light-theme');
+                body.classList.add('neutral-theme');
             }
         }
 
